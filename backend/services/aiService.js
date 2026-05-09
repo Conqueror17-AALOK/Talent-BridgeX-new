@@ -83,49 +83,103 @@ const generateRoadmap = async (studentProfile) => {
 };
 
 /**
- * Generates dynamic assessment questions based on career interest.
- * @param {string} interest - Student's career interest
- * @returns {Promise<Array>} - List of questions
+ * Returns exactly 4 hardcoded opening questions.
  */
-const FALLBACK_QUESTIONS = (interest) => [
-  { id: 1, question: `What best describes your experience level with ${interest}?`, type: "mcq", options: ["Complete Beginner", "Some Exposure", "Intermediate", "Advanced"], category: "Technical" },
-  { id: 2, question: "How do you prefer to solve complex problems?", type: "mcq", options: ["Research independently", "Collaborate with peers", "Follow a structured framework", "Experiment through trial and error"], category: "Soft Skills" },
-  { id: 3, question: "Rate your comfort level with working under tight deadlines.", type: "ranking", options: ["Very Uncomfortable", "Uncomfortable", "Comfortable", "Very Comfortable"], category: "Soft Skills" },
-  { id: 4, question: `Which area of ${interest} interests you the most?`, type: "mcq", options: ["Theory & Concepts", "Practical Application", "Research & Innovation", "Product & Strategy"], category: "Technical" },
-  { id: 5, question: "How often do you seek feedback on your work?", type: "ranking", options: ["Rarely", "Sometimes", "Often", "Always"], category: "Leadership" },
-  { id: 6, question: "Describe a challenge you overcame using critical thinking.", type: "short_answer", placeholder: "Share a specific example...", category: "Soft Skills" },
-  { id: 7, question: "How do you stay current with new developments in your field?", type: "mcq", options: ["Online courses", "Reading articles & research", "Attending events & meetups", "Personal projects"], category: "Technical" },
-  { id: 8, question: "Rate your ability to communicate technical concepts to non-technical audiences.", type: "ranking", options: ["Needs Work", "Developing", "Proficient", "Expert"], category: "Soft Skills" },
-  { id: 9, question: "How comfortable are you with taking initiative on new projects?", type: "ranking", options: ["Not Comfortable", "Somewhat Comfortable", "Comfortable", "Very Comfortable"], category: "Leadership" },
-  { id: 10, question: `What is your long-term goal within ${interest}?`, type: "short_answer", placeholder: "Describe your vision for your career in 5 years...", category: "Technical" },
+const generatePhase1Questions = () => [
+  {
+    id: 1,
+    question: "What is your primary area of interest?",
+    type: "mcq",
+    options: ["Frontend Development", "Backend Development", "Data Science & AI", "DevOps & Cloud", "Cybersecurity", "Android Development", "iOS Development", "UX/UI Design", "Blockchain", "Python / Scripting"],
+    category: "Technical"
+  },
+  {
+    id: 2,
+    question: "What is your current experience level?",
+    type: "mcq",
+    options: ["Complete Beginner", "Some Exposure (< 6 months)", "Intermediate (6 months – 2 years)", "Experienced (2+ years)"],
+    category: "Technical"
+  },
+  {
+    id: 3,
+    question: "What is your primary learning goal?",
+    type: "mcq",
+    options: ["Get my first job/internship", "Switch careers", "Deepen existing skills", "Build a product/startup", "Academic research"],
+    category: "Soft Skills"
+  },
+  {
+    id: 4,
+    question: "How many hours per week can you dedicate to learning?",
+    type: "mcq",
+    options: ["Less than 5 hours", "5–10 hours", "10–20 hours", "20+ hours"],
+    category: "Soft Skills"
+  }
 ];
 
-const generateAssessmentQuestions = async (interest) => {
-  // Fallback when OpenAI is not configured
+const PHASE2_FALLBACKS = {
+  "Frontend Development": [
+    { id: 5, question: "Which of these is NOT a semantic HTML tag?", type: "mcq", options: ["<header>", "<section>", "<div>", "<article>"], category: "Technical", skillArea: "HTML" },
+    { id: 6, question: "What is the primary purpose of the 'useEffect' hook in React?", type: "mcq", options: ["Manage global state", "Handle side effects", "Improve performance", "Route navigation"], category: "Technical", skillArea: "React" },
+    { id: 7, question: "Which CSS property is used to create a flex container?", type: "mcq", options: ["display: flex", "layout: flex", "flex-direction: row", "align-items: center"], category: "Technical", skillArea: "CSS" },
+    { id: 8, question: "What does 'prop drilling' refer to in React?", type: "mcq", options: ["Fast data fetching", "Passing data through multiple levels", "Optimizing renders", "Building reusable components"], category: "Technical", skillArea: "React" },
+    { id: 9, question: "Which tool is commonly used for bundling JavaScript applications?", type: "mcq", options: ["Babel", "Webpack", "Prettier", "ESLint"], category: "Technical", skillArea: "Tooling" },
+    { id: 10, question: "What is the DOM?", type: "mcq", options: ["A style sheet", "A programming language", "An interface for web documents", "A database"], category: "Technical", skillArea: "JS" },
+    { id: 11, question: "Which of these is a popular CSS-in-JS library?", type: "mcq", options: ["Sass", "Bootstrap", "Styled Components", "Tailwind"], category: "Technical", skillArea: "CSS" },
+    { id: 12, question: "What does SEO stand for?", type: "mcq", options: ["System Engine Optimization", "Search Engine Optimization", "Secure Entry Option", "Static Element Object"], category: "Technical", skillArea: "General" }
+  ],
+  "Backend Development": [
+    { id: 5, question: "What is the main purpose of an index in a database?", type: "mcq", options: ["To store data", "To speed up data retrieval", "To encrypt data", "To backup data"], category: "Technical", skillArea: "Database" },
+    { id: 6, question: "Which HTTP method is used to update an existing resource?", type: "mcq", options: ["GET", "POST", "PUT", "DELETE"], category: "Technical", skillArea: "API" },
+    { id: 7, question: "What is middleware in Express.js?", type: "mcq", options: ["A database layer", "Functions that execute during the request cycle", "A front-end framework", "A load balancer"], category: "Technical", skillArea: "Node.js" },
+    { id: 8, question: "What does ACID stand for in database transactions?", type: "mcq", options: ["Atomicity, Consistency, Isolation, Durability", "Accuracy, Complexity, Integrity, Design", "Access, Control, Internal, Data", "Always Clean In Data"], category: "Technical", skillArea: "Database" },
+    { id: 9, question: "Which of these is a NoSQL database?", type: "mcq", options: ["PostgreSQL", "MySQL", "MongoDB", "SQLite"], category: "Technical", skillArea: "Database" },
+    { id: 10, question: "What is JWT used for?", type: "mcq", options: ["Database caching", "User authentication", "Image processing", "Unit testing"], category: "Technical", skillArea: "Security" },
+    { id: 11, question: "Which status code represents 'Not Found'?", type: "mcq", options: ["200", "401", "404", "500"], category: "Technical", skillArea: "API" },
+    { id: 12, question: "What is the purpose of hashing passwords?", type: "mcq", options: ["To compress them", "To store them securely", "To make them easier to remember", "To speed up login"], category: "Technical", skillArea: "Security" }
+  ],
+  "Data Science & AI": [
+    { id: 5, question: "Which library is most commonly used for data manipulation in Python?", type: "mcq", options: ["Matplotlib", "Pandas", "Scikit-Learn", "TensorFlow"], category: "Technical", skillArea: "Python" },
+    { id: 6, question: "What is supervised learning?", type: "mcq", options: ["Learning without labels", "Learning with labeled data", "Learning through rewards", "Learning from scratch"], category: "Technical", skillArea: "ML" },
+    { id: 7, question: "Which of these is a common metric for evaluating regression models?", type: "mcq", options: ["Accuracy", "F1 Score", "Mean Squared Error", "Precision"], category: "Technical", skillArea: "ML" },
+    { id: 8, question: "What is the purpose of 'overfitting' in machine learning?", type: "mcq", options: ["Improving generalization", "Model performing well on training data but poorly on test data", "Speeding up training", "Reducing model size"], category: "Technical", skillArea: "ML" },
+    { id: 9, question: "What does 'NLP' stand for?", type: "mcq", options: ["Natural Language Processing", "Node Language Protocol", "Network Layer Performance", "Neural Logic Path"], category: "Technical", skillArea: "AI" },
+    { id: 10, question: "Which activation function is commonly used in hidden layers of a neural network?", type: "mcq", options: ["Linear", "Sigmoid", "ReLU", "Step"], category: "Technical", skillArea: "Deep Learning" },
+    { id: 11, question: "What is a 'DataFrame'?", type: "mcq", options: ["A 2D labeled data structure", "A type of plot", "A machine learning algorithm", "A database table"], category: "Technical", skillArea: "Data Analysis" },
+    { id: 12, question: "Which of these is used for deep learning?", type: "mcq", options: ["NumPy", "PyTorch", "BeautifulSoup", "Seaborn"], category: "Technical", skillArea: "Deep Learning" }
+  ],
+  "DevOps & Cloud": [
+    { id: 5, question: "What does CI/CD stand for?", type: "mcq", options: ["Continuous Integration / Continuous Deployment", "Code Inspection / Code Design", "Cloud Infrastructure / Cloud Data", "Command Interface / Command Delivery"], category: "Technical", skillArea: "DevOps" },
+    { id: 6, question: "Which tool is widely used for containerization?", type: "mcq", options: ["Jenkins", "Docker", "Ansible", "Terraform"], category: "Technical", skillArea: "Containers" },
+    { id: 7, question: "What is the role of Kubernetes?", type: "mcq", options: ["Source code management", "Container orchestration", "Database administration", "Web server"], category: "Technical", skillArea: "Orchestration" },
+    { id: 8, question: "Which of these is an 'Infrastructure as Code' tool?", type: "mcq", options: ["Git", "Docker Hub", "Terraform", "Slack"], category: "Technical", skillArea: "IaC" },
+    { id: 9, question: "What is a 'load balancer'?", type: "mcq", options: ["A tool to speed up CPU", "Distributes incoming network traffic across multiple servers", "A backup storage", "A security firewall"], category: "Technical", skillArea: "Infrastructure" },
+    { id: 10, question: "Which cloud provider offers 'AWS'?", type: "mcq", options: ["Google", "Microsoft", "Amazon", "IBM"], category: "Technical", skillArea: "Cloud" },
+    { id: 11, question: "What is the purpose of a monitoring tool like Prometheus?", type: "mcq", options: ["To write code", "To track system performance and health", "To deploy applications", "To manage users"], category: "Technical", skillArea: "Monitoring" },
+    { id: 12, question: "What does 'serverless' computing mean?", type: "mcq", options: ["No servers are involved", "Developers don't have to manage server infrastructure", "Running apps on a local machine", "Using only physical hardware"], category: "Technical", skillArea: "Cloud" }
+  ]
+};
+
+const generatePhase2Questions = async (interest, level, goal) => {
   if (!openai) {
-    console.warn('⚠️ OpenAI not configured — returning fallback assessment questions.');
-    return FALLBACK_QUESTIONS(interest);
+    console.warn('⚠️ OpenAI not configured — returning fallback phase 2 questions.');
+    return PHASE2_FALLBACKS[interest] || PHASE2_FALLBACKS["Frontend Development"];
   }
 
   const prompt = `
-    Generate 15 dynamic assessment questions for a student interested in ${interest}.
-    Include a mix of:
-    - Multiple Choice Questions (MCQ)
-    - Ranking questions (1-4)
-    - Short Answer questions (critical thinking)
+    Generate exactly 8 skill-specific MCQ questions for a student interested in "${interest}".
+    The student's level is "${level}" and their goal is "${goal}".
     
-    Return exactly as a JSON object with a single key "questions" containing the array:
-    {
-      "questions": [
-        {
-          "id": 1,
-          "question": "...",
-          "type": "mcq" | "ranking" | "short_answer",
-          "options": ["...", "..."], 
-          "category": "Technical" | "Soft Skills" | "Leadership"
-        }
-      ]
-    }
+    Focus on diagnosing specific knowledge gaps relevant to this field.
+    
+    Each question must be a JSON object with:
+    - id (start from 5)
+    - question (string)
+    - type: "mcq"
+    - options (exactly 4 options)
+    - category (Technical, Soft Skills, or Leadership)
+    - skillArea (e.g. "React", "Database", "AWS")
+    
+    Return exactly as a JSON object with a single key "questions" containing the array.
   `;
 
   try {
@@ -136,11 +190,10 @@ const generateAssessmentQuestions = async (interest) => {
     });
 
     const parsed = JSON.parse(response.choices[0].message.content);
-    return parsed.questions || parsed.data || (Array.isArray(parsed) ? parsed : []);
+    return parsed.questions || (Array.isArray(parsed) ? parsed : []);
   } catch (error) {
-    console.error("AI Question Generation Error:", error);
-    // Return fallback instead of crashing
-    return FALLBACK_QUESTIONS(interest);
+    console.error("AI Phase 2 Question Generation Error:", error);
+    return PHASE2_FALLBACKS[interest] || PHASE2_FALLBACKS["Frontend Development"];
   }
 };
 
@@ -225,7 +278,8 @@ const generateCounsellingResponse = async (message, context) => {
 
 module.exports = {
   generateRoadmap,
-  generateAssessmentQuestions,
+  generatePhase1Questions,
+  generatePhase2Questions,
   evaluateAssessment,
   generateCounsellingResponse
 };

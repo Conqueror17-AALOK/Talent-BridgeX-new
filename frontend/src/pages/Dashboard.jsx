@@ -1,12 +1,13 @@
 import AppLayout from '../components/AppLayout';
 import { motion } from 'framer-motion';
-import { Bell, Search, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Bell, Search, ArrowUpRight, Sparkles, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { roadmapService } from '../services/ai.service';
 
 const getInitials = (name = '') =>
   name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
@@ -26,6 +27,8 @@ const Dashboard = () => {
 
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [roadmap, setRoadmap] = useState(null);
+  const [roadmapLoading, setRoadmapLoading] = useState(true);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -42,6 +45,21 @@ const Dashboard = () => {
       }
     };
     fetchSuggestions();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchRoadmap = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await roadmapService.get(user.id);
+        setRoadmap(data);
+      } catch (error) {
+        console.warn('Roadmap fetch error:', error.message);
+      } finally {
+        setRoadmapLoading(false);
+      }
+    };
+    fetchRoadmap();
   }, [user]);
 
   const handleApplyNow = (row) => {
@@ -113,47 +131,75 @@ const Dashboard = () => {
           animate="visible"
           className="max-w-7xl mx-auto space-y-10 md:space-y-12"
         >
-          {/* Header / Roadmap Progress */}
-          <motion.div variants={itemVariants} className="space-y-6 md:space-y-8">
+          {/* Header / Overview */}
+          <motion.div variants={itemVariants} className="space-y-6 md:space-y-10">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2 border-b border-border pb-4">
               <h1 className="text-3xl md:text-5xl font-serif">Intelligence Overview</h1>
               <p className="text-[10px] uppercase tracking-[0.2em] text-secondary">Last Sync: Today, {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} GMT</p>
             </div>
-            
-            <div className="bg-white border border-border p-6 md:p-8">
-              <div className="flex justify-between items-center mb-6 md:mb-8">
-                <h3 className="text-xs uppercase tracking-widest font-bold">Personalized Roadmap Progress</h3>
-                <span className="text-xs font-serif italic text-accent">64% Completed</span>
+
+            {/* Roadmap Hero Card */}
+            {roadmapLoading ? (
+              <div className="bg-white border border-border p-12 text-center">
+                <Loader2 size={24} className="animate-spin mx-auto text-accent mb-4" />
+                <p className="text-[10px] uppercase tracking-widest text-secondary font-bold">Synchronizing Intelligence...</p>
               </div>
-              
-              <div className="overflow-x-auto py-8 md:py-12">
-                <div className="min-w-[480px] relative">
-                  <div className="absolute inset-x-0 top-[9px] h-[1px] bg-border" />
-                  <div className="flex justify-between relative z-10">
-                    {[
-                      { name: 'Fundamentals', status: 'completed' },
-                      { name: 'Core Assessment', status: 'completed' },
-                      { name: 'Advanced Modules', status: 'current' },
-                      { name: 'Applied Projects', status: 'pending' },
-                      { name: 'Market Readiness', status: 'pending' },
-                    ].map((step, i) => (
-                      <div key={i} className="flex flex-col items-center">
-                        <div className={`w-3 h-3 rotate-45 border ${
-                          step.status === 'completed' ? 'bg-primary border-primary' : 
-                          step.status === 'current' ? 'bg-accent border-accent' : 
-                          'bg-white border-border'
-                        }`} />
-                        <p className={`mt-4 text-[10px] uppercase tracking-widest font-bold ${
-                          step.status === 'pending' ? 'text-secondary/40' : 'text-primary'
-                        }`}>
-                          {step.name}
-                        </p>
-                      </div>
+            ) : roadmap ? (
+              <div className="bg-primary text-white p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-10 group relative overflow-hidden">
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full -mr-32 -mt-32 blur-3xl" />
+                
+                <div className="space-y-6 text-center md:text-left flex-1 relative z-10">
+                  <div className="flex items-center justify-center md:justify-start gap-4">
+                    <span className="px-3 py-1 bg-accent text-primary text-[10px] uppercase tracking-[0.2em] font-bold">
+                      {roadmap.level}
+                    </span>
+                    <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-white/60">Career Trajectory</h3>
+                  </div>
+                  <h2 className="text-4xl md:text-6xl font-serif leading-tight">{roadmap.roadmapTitle}</h2>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                    {roadmap.gaps?.slice(0, 4).map((gap, i) => (
+                      <span key={i} className="text-[10px] uppercase tracking-widest text-accent font-bold px-2 py-1 border border-accent/30 bg-accent/5">
+                        {gap}
+                      </span>
                     ))}
                   </div>
                 </div>
+                
+                <div className="flex flex-col items-center md:items-end gap-6 shrink-0 relative z-10">
+                  <div className="text-right hidden md:block">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-2">Completion Vector</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-serif text-accent">{Math.round((roadmap.completedTopics / roadmap.totalTopics) * 100) || 0}%</span>
+                      <span className="text-xs text-white/60 uppercase tracking-widest font-bold">Progress</span>
+                    </div>
+                  </div>
+                  <Link 
+                    to="/roadmap" 
+                    className="btn-primary bg-accent hover:bg-white text-primary flex items-center gap-3 px-10 py-5 text-xs font-bold uppercase tracking-widest transition-all hover:scale-105"
+                  >
+                    View Roadmap <ArrowUpRight size={16} />
+                  </Link>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white border border-border p-10 md:p-16 text-center space-y-8">
+                <div className="space-y-4">
+                  <h3 className="text-3xl md:text-4xl font-serif">Unlock Your Precision Career Roadmap</h3>
+                  <p className="text-secondary font-serif italic max-w-xl mx-auto text-lg">
+                    Our AI has detected an incomplete profile. Execute the skill assessment to map your path to industry standards.
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <button 
+                    onClick={() => navigate('/assessment')}
+                    className="btn-primary px-12 py-5 text-xs font-bold uppercase tracking-[0.2em]"
+                  >
+                    Start Intelligence Assessment
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Asymmetric Grid */}
