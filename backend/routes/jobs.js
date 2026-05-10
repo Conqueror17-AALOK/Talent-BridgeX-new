@@ -54,7 +54,7 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // POST /api/opportunities/:id/apply — submit application (protected)
-router.post('/apply/:id', verifyToken, async (req, res) => {
+router.post('/:id/apply', verifyToken, async (req, res) => {
   const { id: opportunity_id } = req.params;
   const user_id = req.userId;
 
