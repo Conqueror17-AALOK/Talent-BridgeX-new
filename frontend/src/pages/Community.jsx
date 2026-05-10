@@ -4,14 +4,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, MessageSquare, Video, Plus, ArrowUpRight, MessageCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { communityStats, studyGroups, forumPosts, mentors } from '../data/community';
+import { communityStats, studyGroups as staticStudyGroups, forumPosts, mentors } from '../data/community';
+import apiClient from '../api/apiClient';
+import { useEffect } from 'react';
 
 const Community = () => {
   const [activeTab, setActiveTab] = useState('Groups');
+  const [studyGroups, setStudyGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [joiningGroup, setJoiningGroup] = useState(null);
   const [connectingMentor, setConnectingMentor] = useState(null);
   const [requestingMatch, setRequestingMatch] = useState(false);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.get('/community/groups');
+        setStudyGroups(response.data);
+      } catch (err) {
+        console.warn('Community API unavailable, using fallback:', err.message);
+        setStudyGroups(staticStudyGroups);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGroups();
+  }, []);
 
   const handleJoinGroup = async (group) => {
     if (!user) { toast.error('Please log in to join groups.'); return; }
