@@ -15,7 +15,12 @@ import Community from './pages/Community';
 import Counselling from './pages/Counselling';
 import Profile from './pages/Profile';
 import Roadmap from './pages/Roadmap';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import RegistrationPending from './pages/RegistrationPending';
 import CustomCursor from './components/CustomCursor';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -26,19 +31,25 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/assessment" element={<Assessment />} />
-        <Route path="/roadmap" element={<Roadmap />} />
-        <Route path="/learn" element={<Learn />} />
-        <Route path="/learn/:id" element={<ModuleDetail />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/:id" element={<ProjectDetail />} />
-        <Route path="/opportunities" element={<Opportunities />} />
-        <Route path="/opportunities/:id" element={<OpportunityDetail />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/counselling" element={<Counselling />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/registration-pending" element={<RegistrationPending />} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/assessment" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
+        <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+        <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
+        <Route path="/learn/:id" element={<ProtectedRoute><ModuleDetail /></ProtectedRoute>} />
+        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+        <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+        <Route path="/opportunities" element={<ProtectedRoute><Opportunities /></ProtectedRoute>} />
+        <Route path="/opportunities/:id" element={<ProtectedRoute><OpportunityDetail /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+        <Route path="/counselling" element={<ProtectedRoute><Counselling /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       </Routes>
     </Router>
   </>
