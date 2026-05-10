@@ -16,4 +16,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptor to handle expired tokens (401 errors)
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('tbx_token');
+      localStorage.removeItem('tbx_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default api;
