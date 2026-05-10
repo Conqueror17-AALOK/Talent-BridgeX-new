@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, Upload, Check, Loader2, Camera, X } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Upload, Check, Loader2, Camera, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/apiClient';
@@ -11,7 +11,6 @@ const getInitials = (name = '') =>
 
 const Register = () => {
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const fileInputRef = useRef(null);
@@ -28,7 +27,7 @@ const Register = () => {
     linkedinUrl: '',
   });
 
-  const { register } = useAuth();
+  const { register, loading, error: authError } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -52,7 +51,6 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     try {
       // 1. Register user — get back user + token
       const user = await register(formData);
@@ -75,12 +73,10 @@ const Register = () => {
         }
       }
 
-      toast.success('Registration successful! Taking you to your assessment…');
-      navigate('/assessment');
+      toast.success('Registration successful! Please check your email.');
+      navigate('/registration-pending', { state: { email: formData.email } });
     } catch (error) {
-      toast.error(error.message || 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      // toast.error is handled in AuthContext or here
     }
   };
 
@@ -125,6 +121,13 @@ const Register = () => {
             <h3 className="text-3xl font-serif mb-2">Create your account</h3>
             <p className="text-secondary text-sm">Step {step} of 3</p>
           </div>
+
+          {authError && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-200 flex items-center gap-3 text-red-600 text-xs font-serif italic">
+              <AlertCircle size={16} />
+              {authError}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <AnimatePresence mode="wait">
@@ -273,9 +276,9 @@ const Register = () => {
                     <button type="button" onClick={prevStep} className="btn-outline flex-1 py-4 flex justify-center items-center gap-2">
                       <ArrowLeft size={16} /> Back
                     </button>
-                    <button type="submit" id="reg-submit" disabled={isLoading}
+                    <button type="submit" id="reg-submit" disabled={loading}
                       className="btn-primary flex-1 py-4 flex justify-center items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                      {isLoading ? (
+                      {loading ? (
                         <><Loader2 size={16} className="animate-spin" /> Creating…</>
                       ) : (
                         <>Finalize <Check size={16} /></>
