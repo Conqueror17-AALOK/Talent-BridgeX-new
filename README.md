@@ -149,7 +149,7 @@ Distributed under the **ISC License**. See `LICENSE` for more information.
 ## 📧 Contact / Author
 **Aalok** - [Conqueror17-AALOK](https://github.com/Conqueror17-AALOK)
 Project Link: [https://github.com/Conqueror17-AALOK/Talent-BridgeX-new](https://github.com/Conqueror17-AALOK/Talent-BridgeX-new)
-Email: [your-email@example.com](mailto:your-email@example.com)
+Email: aagealok17#gmail.com
 
 ## 🙏 Acknowledgements
 - [OpenAI](https://openai.com/) for the AI capabilities.
