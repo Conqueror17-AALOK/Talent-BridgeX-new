@@ -8,21 +8,17 @@ import { useAuth } from '../../context/AuthContext';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loading, error: authError } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     try {
       await login(email, password);
       toast.success('Welcome back! Redirecting to dashboard…');
       navigate('/dashboard');
     } catch (error) {
-      toast.error(error.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
+      // toast.error is already handled in AuthContext or here
     }
   };
 
@@ -52,6 +48,13 @@ const Login = () => {
             <p className="text-secondary text-sm">Enter your credentials below</p>
           </div>
 
+          {authError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 flex items-center gap-3 text-red-600 text-xs font-serif italic">
+              <AlertCircle size={16} />
+              {authError}
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-1">
               <label className="text-[10px] uppercase tracking-widest text-secondary block">Email Address</label>
@@ -68,7 +71,7 @@ const Login = () => {
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase tracking-widest text-secondary block">Password</label>
-                <span className="text-[10px] uppercase tracking-widest text-accent">Forgot?</span>
+                <Link to="/forgot-password" id="forgot-password-link" className="text-[10px] uppercase tracking-widest text-accent hover:underline">Forgot?</Link>
               </div>
               <input
                 type="password"
@@ -84,10 +87,10 @@ const Login = () => {
             <button
               type="submit"
               id="login-submit"
-              disabled={isLoading}
+              disabled={loading}
               className="btn-primary w-full py-4 flex justify-center items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {loading ? (
                 <><Loader2 size={16} className="animate-spin" /> Authenticating…</>
               ) : (
                 <>Login <ArrowRight size={16} /></>
