@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const openai = require('../config/openai');
+const aiService = require('../services/aiService');
 
 // POST /api/ai/suggest
 router.post('/suggest', async (req, res) => {
@@ -30,6 +31,30 @@ router.post('/suggest', async (req, res) => {
 
     res.json({ suggestions });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/ai/counselling
+router.post('/counselling', async (req, res) => {
+  const { message, context, history } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  try {
+    // Try Gemini first as it's preferred for counselling in the frontend
+    let reply;
+    if (process.env.GEMINI_API_KEY) {
+      reply = await aiService.generateGeminiResponse(message, context || {}, history || []);
+    } else {
+      reply = await aiService.generateCounsellingResponse(message, context || {}, history || []);
+    }
+    
+    res.json({ reply });
+  } catch (err) {
+    console.error("AI Counselling Route Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
