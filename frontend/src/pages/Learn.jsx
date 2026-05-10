@@ -2,9 +2,31 @@ import AppLayout from '../components/AppLayout';
 import { Search, Filter, BookOpen, Clock, BarChart, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
-import { categories, modules } from '../data/learning';
+import { categories as staticCategories, modules as staticModules } from '../data/learning';
+import { useState, useEffect } from 'react';
+import apiClient from '../api/apiClient';
+import { Loader2 } from 'lucide-react';
 
 const Learn = () => {
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState(staticCategories);
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const response = await apiClient.get('/learning/modules');
+        setModules(response.data);
+      } catch (err) {
+        console.warn('Learning API unavailable, using fallback:', err.message);
+        setModules(staticModules);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchModules();
+  }, []);
+
   const topBar = (
     <>
       <div className="flex items-center gap-3 text-secondary">
