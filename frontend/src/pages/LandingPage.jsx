@@ -197,9 +197,9 @@ const LandingPage = () => {
               <div>
                 <p className="text-xs uppercase tracking-widest font-bold mb-4">Community</p>
                 <ul className="space-y-2 text-sm text-secondary">
-                  <li><Link to="/forum" className="hover:text-accent">Forum</Link></li>
-                  <li><Link to="/groups" className="hover:text-accent">Study Groups</Link></li>
-                  <li><Link to="/mentorship" className="hover:text-accent">Mentorship</Link></li>
+                  <li><Link to="/projects" className="hover:text-accent">Forum</Link></li>
+                  <li><Link to="/community" className="hover:text-accent">Study Groups</Link></li>
+                  <li><Link to="/counselling" className="hover:text-accent">Mentorship</Link></li>
                 </ul>
               </div>
               <div>

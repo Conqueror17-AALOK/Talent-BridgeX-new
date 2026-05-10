@@ -246,34 +246,39 @@ const evaluateAssessment = async (answers, interest) => {
  * Generates a career counselling response based on student message and context.
  * @param {string} message - User's message
  * @param {Object} context - { skillProfile, roadmap, interest }
+ * @param {Array} history - Previous messages { role, content }
  * @returns {Promise<string>} - AI response
  */
-const generateCounsellingResponse = async (message, context) => {
-  const prompt = `
-    You are the Talent-BridgeX AI Career Counsellor. 
-    A student is asking for advice.
-    
-    Student Context:
-    - Skill Profile: ${JSON.stringify(context.skillProfile)}
-    - Roadmap: ${JSON.stringify(context.roadmap)}
-    - Career Interest: ${context.interest}
-    
-    Student Message: "${message}"
-    
-    Provide professional, encouraging, and highly specific career advice. 
-    Reference their specific skills and roadmap milestones where appropriate.
-    Keep the tone editorial and professional.
-  `;
+const generateCounsellingResponse = async (message, context, history = []) => {
+  if (!openai) {
+    throw new Error("AI service is offline. Please add your OPENAI_API_KEY to backend/.env and restart the server.");
+  }
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are a professional career consultant with expertise in global talent trends." },
-      { role: "user", content: prompt }
-    ]
-  });
+  const systemPrompt = `You are the Talent-BridgeX AI Career Counsellor — a warm, expert, and encouraging career guide for students. You have access to the student's skill profile, roadmap progress, and career goals. Give specific, actionable, and personalized advice. Keep responses concise (3–5 sentences max unless detail is requested). Be motivating but honest. Reference their specific strengths and gaps when relevant.
 
-  return response.choices[0].message.content;
+Student Context:
+- Career Interest: ${context.interest || 'Not specified'}
+- Skill Profile: ${JSON.stringify(context.skillProfile || {})}
+- Current Roadmap: ${JSON.stringify(context.roadmap || {})}
+`;
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...history.map(msg => ({ role: msg.role, content: msg.content })),
+    { role: "user", content: message }
+  ];
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: messages,
+    });
+
+    return response.choices[0].message.content;
+  } catch (error) {
+    console.error("OpenAI Counselling Error:", error);
+    throw error;
+  }
 };
 
 module.exports = {

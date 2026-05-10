@@ -72,16 +72,23 @@ io.on('connection', (socket) => {
     console.log(`User ${userId} joined counselling room`);
   });
 
-  socket.on('send-message', async ({ userId, message, context }) => {
+  socket.on('send-message', async ({ userId, message, context, history }) => {
     // Don't echo back user message — frontend adds it optimistically
     try {
-      const aiResponse = await generateCounsellingResponse(message, context);
+      const aiResponse = await generateCounsellingResponse(message, context, history);
       socket.emit('receive-message', { role: 'assistant', content: aiResponse });
     } catch (error) {
       console.error('AI counselling error:', error.message);
+      
+      // Check for specific error from aiService or general failure
+      const errorText = error.message.includes('OPENAI_API_KEY') 
+        ? error.message 
+        : "I apologize — I encountered an issue processing your request. AI service might be temporarily offline.";
+        
       socket.emit('receive-message', {
         role: 'assistant',
-        content: "I apologize — I encountered an issue processing your request. Please try again."
+        content: errorText,
+        isError: true
       });
     }
   });

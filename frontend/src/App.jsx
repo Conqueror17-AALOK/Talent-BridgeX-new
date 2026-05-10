@@ -15,10 +15,13 @@ import Community from './pages/Community';
 import Counselling from './pages/Counselling';
 import Profile from './pages/Profile';
 import Roadmap from './pages/Roadmap';
+import CustomCursor from './components/CustomCursor';
 
 function App() {
   return (
-    <Router>
+    <>
+      <CustomCursor />
+      <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -38,6 +41,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
+  </>
   );
 }
 

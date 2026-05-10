@@ -1,59 +1,110 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import AppLayout from '../components/AppLayout';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, Calendar, Info, Sparkles, Loader2, ArrowRight } from 'lucide-react';
-import { io } from 'socket.io-client';
+import { 
+  MessageSquare, 
+  Send, 
+  Calendar, 
+  Info, 
+  Sparkles, 
+  ArrowRight, 
+  Volume2, 
+  VolumeX, 
+  RotateCcw, 
+  AlertCircle,
+  Zap 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+
+async function callGemini(history, context) {
+  const key = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!key) throw new Error('VITE_GEMINI_API_KEY not set in frontend/.env — add it and restart npm run dev');
+
+  const systemPrompt = `You are the Talent-BridgeX AI Career Counsellor — 
+  a warm, expert, and encouraging career guide for students.
+  Student context:
+  - Career Interest: ${context.interest}
+  - Skill Profile: ${JSON.stringify(context.skillProfile)}
+  - Current Roadmap: ${JSON.stringify(context.roadmap)}
+  Give specific, actionable advice in 3-5 sentences. Be motivating but honest.`;
+
+  const contents = history
+    .filter(m => m.role !== 'system')
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents
+      })
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Gemini API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+}
 
 const Counselling = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Welcome. I have analyzed your latest skill assessment and current roadmap progress. How can I assist with your career trajectory today?" }
+    { 
+      role: 'assistant', 
+      content: "Welcome. I have analyzed your latest skill assessment and current roadmap progress. How can I assist with your career trajectory today?",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    const saved = localStorage.getItem('tbx_voice_enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const scrollRef = useRef(null);
+  const speechRef = useRef(null);
 
-  // Lazy-initialize socket so it doesn't fire on every render
-  const socket = useMemo(() => {
-    const s = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
-      autoConnect: false,
-      reconnectionAttempts: 3,
-    });
-    return s;
-  }, []);
+  // Voice Toggle Persistence
+  useEffect(() => {
+    localStorage.setItem('tbx_voice_enabled', JSON.stringify(voiceEnabled));
+  }, [voiceEnabled]);
+
+  // TTS Helpers
+  const cancel = () => window.speechSynthesis.cancel();
+  const speak = (text) => {
+    if (!voiceEnabled) return;
+    cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    
+    const preferredVoice = voices.find(v => 
+      (v.lang.startsWith('en') && (v.name.includes('Google UK') || v.name.includes('Samantha')))
+    ) || voices.find(v => v.lang.startsWith('en'));
+
+    if (preferredVoice) utterance.voice = preferredVoice;
+    utterance.rate = 0.92;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    window.speechSynthesis.speak(utterance);
+    speechRef.current = utterance;
+  };
 
   useEffect(() => {
-    socket.connect();
-
-    socket.on('connect', () => {
-      setIsConnected(true);
-      if (user?.id) socket.emit('join-counselling', user.id);
-    });
-
-    socket.on('connect_error', () => {
-      setIsConnected(false);
-      toast.error('Could not connect to AI counsellor. Is the backend running?');
-    });
-
-    socket.on('receive-message', (msg) => {
-      setMessages(prev => {
-        // Deduplicate user message echoes
-        if (msg.role === 'user' && prev[prev.length - 1]?.content === msg.content) return prev;
-        return [...prev, msg];
-      });
-      if (msg.role === 'assistant') setIsTyping(false);
-    });
-
-    return () => {
-      socket.off('connect');
-      socket.off('connect_error');
-      socket.off('receive-message');
-      socket.disconnect();
-    };
-  }, [socket, user]);
+    return () => cancel();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -61,32 +112,96 @@ const Counselling = () => {
     }
   }, [messages, isTyping]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e?.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || isTyping) return;
 
-    if (!isConnected) {
-      toast.error('Not connected to AI server. Please refresh the page.');
-      return;
-    }
+    const context = {
+      interest: user?.careerInterest || 'Tech',
+      skillProfile: { technical: 78, soft: 92 },
+      roadmap: { currentMilestone: 'Advanced Architecture' }
+    };
 
-    // Optimistically add user message to UI
-    setMessages(prev => [...prev, { role: 'user', content: trimmed }]);
-    setIsTyping(true);
-
-    socket.emit('send-message', { 
-      userId: user?.id || 'anonymous', 
-      message: trimmed,
-      context: {
-        interest: user?.careerInterest || 'Tech',
-        skillProfile: { technical: 78, soft: 92 },
-        roadmap: { currentMilestone: 'Advanced Architecture' }
-      }
-    });
-    
+    const userMsg = { 
+      role: 'user', 
+      content: trimmed, 
+      ts: new Date(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+    };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setIsTyping(true);
+    cancel(); // cancel any ongoing speech
+
+    try {
+      const history = [...messages, userMsg].map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+      const reply = await callGemini(history, context);
+      const aiMsg = { 
+        role: 'assistant', 
+        content: reply, 
+        ts: new Date(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, aiMsg]);
+      speak(reply);
+    } catch (err) {
+      let friendlyMessage = `Error: ${err.message}`;
+      if (err.message.includes('429')) {
+        friendlyMessage = "I'm receiving too many requests right now. Please wait about 15-30 seconds and try again.";
+      }
+      
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: friendlyMessage,
+        ts: new Date(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isError: true,
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
+
+  const handleClearChat = () => {
+    setMessages([{ 
+      role: 'assistant', 
+      content: "Welcome. I have analyzed your latest skill assessment and current roadmap progress. How can I assist with your career trajectory today?",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }]);
+  };
+
+  const handleReplay = (text) => {
+    speak(text);
+  };
+
+  // Dynamic suggested prompts based on career interest
+  const suggestedPrompts = useMemo(() => {
+    const interest = user?.careerInterest?.toLowerCase() || '';
+    
+    if (interest.includes('tech') || interest.includes('software') || interest.includes('developer')) {
+      return [
+        "What are the best learning paths for me?",
+        "Help me find relevant internships.",
+        "How should I prepare for system design?"
+      ];
+    }
+    if (interest.includes('business') || interest.includes('management') || interest.includes('marketing')) {
+      return [
+        "Which certifications are valued?",
+        "Tell me about Product Management roles.",
+        "Can you help with interview prep?"
+      ];
+    }
+    return [
+      "What should I learn next?",
+      "How to prepare for interviews?",
+      "Which certifications are valued?"
+    ];
+  }, [user?.careerInterest]);
 
   const handleSuggestedPrompt = (prompt) => {
     setInput(prompt);
@@ -107,14 +222,29 @@ const Counselling = () => {
       </div>
       
       <div className="flex items-center gap-4 md:gap-6 shrink-0">
+        <div className="flex items-center gap-3 md:gap-4 mr-2 border-r border-border pr-4">
+           <button 
+             onClick={() => setVoiceEnabled(!voiceEnabled)}
+             className={`p-1.5 transition-colors ${voiceEnabled ? 'text-accent' : 'text-secondary opacity-50'}`}
+             title={voiceEnabled ? "Mute Voice" : "Enable Voice"}
+           >
+             {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+           </button>
+           <button 
+             onClick={handleClearChat}
+             className="text-secondary hover:text-accent transition-colors"
+             title="Clear Chat"
+           >
+             <RotateCcw size={18} />
+           </button>
+        </div>
+
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
-          <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`} />
-          <span className={`hidden sm:inline ${isConnected ? 'text-accent' : 'text-secondary'}`}>
-            {isConnected ? 'Intelligence Active' : 'Disconnected'}
-          </span>
+          <Zap size={12} className="text-accent" />
+          <span className="text-accent hidden sm:inline">AI Active</span>
           <Sparkles size={14} className="text-accent" />
         </div>
-        <button onClick={handleBookSession} className="btn-outline py-2 px-4 md:px-6 text-[10px] hidden sm:block" id="counselling-history">
+        <button onClick={handleBookSession} className="btn-outline py-2 px-4 md:px-6 text-[10px] hidden sm:block">
           Session History
         </button>
       </div>
@@ -123,6 +253,24 @@ const Counselling = () => {
 
   return (
     <AppLayout topBar={topBar}>
+      <style>
+        {`
+          @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+          }
+          .typing-dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: currentColor;
+            animation: bounce 1.4s infinite ease-in-out both;
+          }
+          .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+          .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        `}
+      </style>
       <div className="flex flex-col xl:flex-row flex-1 overflow-hidden h-full">
          
          {/* Chat Window */}
@@ -133,16 +281,16 @@ const Counselling = () => {
                   Context: <span className="text-primary italic font-serif">{user?.careerInterest || 'Tech'} / Your Level</span>
                </p>
                <div className="flex gap-2 shrink-0 ml-4">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`} />
-                  <span className="text-[8px] uppercase tracking-widest font-bold text-secondary hidden sm:block">
-                    {isConnected ? 'Real-time Analysis' : 'Offline'}
+                  <span className="text-[8px] uppercase tracking-widest font-bold text-accent 
+                  hidden sm:flex items-center gap-1">
+                    <Zap size={10} /> Gemini AI
                   </span>
                </div>
             </div>
 
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 space-y-8 md:space-y-12">
-               {messages.map((msg, i) => (
+                {messages.map((msg, i) => (
                   <motion.div 
                     key={i}
                     initial={{ opacity: 0, y: 10 }}
@@ -150,31 +298,48 @@ const Counselling = () => {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                      <div className={`max-w-[85%] md:max-w-2xl flex gap-4 md:gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <div className={`w-8 h-8 md:w-10 md:h-10 flex-shrink-0 flex items-center justify-center font-serif text-base md:text-lg ${msg.role === 'user' ? 'bg-primary text-white' : 'bg-accent text-white'}`}>
-                           {msg.role === 'user' ? userInitial : <Sparkles size={18} />}
+                        <div className={`w-8 h-8 md:w-10 md:h-10 flex-shrink-0 flex items-center justify-center font-serif text-base md:text-lg ${msg.role === 'user' ? 'bg-primary text-white' : (msg.isError ? 'bg-red-500 text-white' : 'bg-accent text-white')}`}>
+                           {msg.role === 'user' ? userInitial : (msg.isError ? <AlertCircle size={18} /> : <Sparkles size={18} />)}
                         </div>
-                        <div className={`space-y-2 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                        <div className={`group relative space-y-2 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                            <p className="text-[10px] uppercase tracking-widest text-secondary font-bold">
                               {msg.role === 'user' ? userName : 'AI Counsellor'}
                            </p>
-                           <div className={`text-base md:text-lg font-serif leading-relaxed italic ${msg.role === 'user' ? 'text-primary' : 'text-secondary'}`}>
+                           <div className={`p-4 md:p-6 rounded-sm text-base md:text-lg font-serif leading-relaxed italic ${msg.role === 'user' ? 'text-primary bg-background/30' : (msg.isError ? 'text-red-700 bg-red-50 border border-red-200' : 'text-secondary bg-accent/5')}`}>
                               {msg.content}
+                              
+                              {msg.role === 'assistant' && !msg.isError && (
+                                <button 
+                                  onClick={() => handleReplay(msg.content)}
+                                  className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white shadow-sm border border-border rounded-full text-accent hover:bg-accent hover:text-white"
+                                  title="Replay Voice"
+                                >
+                                  <Volume2 size={12} />
+                                </button>
+                              )}
                            </div>
+                           <p className="text-[8px] text-secondary/50 font-bold uppercase tracking-widest">
+                             {msg.timestamp}
+                           </p>
                         </div>
                      </div>
                   </motion.div>
-               ))}
+                ))}
                
-               {isTyping && (
+                {isTyping && (
                   <div className="flex justify-start">
                      <div className="flex gap-4 md:gap-6 items-center">
                         <div className="w-8 h-8 md:w-10 md:h-10 bg-accent text-white flex items-center justify-center">
-                           <Loader2 size={18} className="animate-spin" />
+                           <div className="flex gap-1 items-center justify-center">
+                              <span className="typing-dot" />
+                              <span className="typing-dot" />
+                              <span className="typing-dot" />
+                           </div>
                         </div>
                         <p className="text-[10px] uppercase tracking-widest text-secondary italic">Analyzing data points…</p>
                      </div>
                   </div>
-               )}
+                )}
             </div>
 
             {/* Input Area */}
@@ -201,11 +366,17 @@ const Counselling = () => {
                      <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </button>
                </form>
-               <div className="mt-3 md:mt-4 flex flex-wrap gap-3 md:gap-6">
+                <div className="mt-3 md:mt-4 flex flex-wrap gap-3 md:gap-6 items-center">
                   <p className="text-[8px] uppercase tracking-widest text-secondary font-bold">Suggested:</p>
-                  <button onClick={() => handleSuggestedPrompt("What should I learn next?")} className="text-[8px] uppercase tracking-widest text-accent hover:underline">"What should I learn next?"</button>
-                  <button onClick={() => handleSuggestedPrompt("Which internship fits me?")} className="text-[8px] uppercase tracking-widest text-accent hover:underline hidden sm:block">"Which internship fits me?"</button>
-                  <button onClick={() => handleSuggestedPrompt("What are my biggest skill gaps?")} className="text-[8px] uppercase tracking-widest text-accent hover:underline hidden md:block">"What are my biggest skill gaps?"</button>
+                  {suggestedPrompts.map((prompt, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => handleSuggestedPrompt(prompt)} 
+                      className={`text-[8px] uppercase tracking-widest text-accent hover:underline ${idx > 1 ? 'hidden sm:block' : ''}`}
+                    >
+                      "{prompt}"
+                    </button>
+                  ))}
                </div>
             </div>
          </div>
@@ -258,7 +429,8 @@ const Counselling = () => {
                      <h4 className="text-[10px] uppercase tracking-widest font-bold">Privacy Note</h4>
                   </div>
                   <p className="text-[10px] leading-relaxed text-white/50 italic">
-                     Conversations are encrypted and used only to refine your personalized career roadmap.
+                     Powered by Google Gemini AI. Conversations stay in your browser 
+                     and are used only to refine your personalized career roadmap.
                   </p>
                </div>
             </div>
