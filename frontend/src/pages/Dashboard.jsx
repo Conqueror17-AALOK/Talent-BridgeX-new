@@ -34,7 +34,17 @@ const Dashboard = () => {
     const fetchSuggestions = async () => {
       setSuggestionsLoading(true);
       try {
-        const skills = user?.skills || ['React', 'Node.js', 'Python'];
+        let skills = [];
+        if (user?.id) {
+          const skillsRes = await apiClient.get(`/users/${user.id}/skills`);
+          skills = skillsRes.data.strengths || [];
+        }
+        
+        // If no skills yet, use defaults
+        if (skills.length === 0) {
+          skills = ['React', 'Node.js', 'Python'];
+        }
+
         const response = await apiClient.post('/ai/suggest', { skills });
         setAiSuggestions(response.data.suggestions || []);
       } catch (error) {
@@ -44,7 +54,7 @@ const Dashboard = () => {
         setSuggestionsLoading(false);
       }
     };
-    fetchSuggestions();
+    if (user) fetchSuggestions();
   }, [user]);
 
   useEffect(() => {
