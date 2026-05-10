@@ -16,45 +16,15 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 
-async function callGemini(history, context) {
-  const key = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!key) throw new Error('VITE_GEMINI_API_KEY not set in frontend/.env — add it and restart npm run dev');
-
-  const systemPrompt = `You are the Talent-BridgeX AI Career Counsellor — 
-  a warm, expert, and encouraging career guide for students.
-  Student context:
-  - Career Interest: ${context.interest}
-  - Skill Profile: ${JSON.stringify(context.skillProfile)}
-  - Current Roadmap: ${JSON.stringify(context.roadmap)}
-  Give specific, actionable advice in 3-5 sentences. Be motivating but honest.`;
-
-  const contents = history
-    .filter(m => m.role !== 'system')
-    .map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`,
-    {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents
-      })
-    }
-  );
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Gemini API error ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+async function callCounsellingAPI(history, context, message) {
+  const res = await api.post('/ai/counselling', {
+    message,
+    context,
+    history
+  });
+  return res.data.reply;
 }
 
 const Counselling = () => {
@@ -139,7 +109,7 @@ const Counselling = () => {
         role: m.role,
         content: m.content
       }));
-      const reply = await callGemini(history, context);
+      const reply = await callCounsellingAPI(history, context, trimmed);
       const aiMsg = { 
         role: 'assistant', 
         content: reply, 
@@ -429,8 +399,8 @@ const Counselling = () => {
                      <h4 className="text-[10px] uppercase tracking-widest font-bold">Privacy Note</h4>
                   </div>
                   <p className="text-[10px] leading-relaxed text-white/50 italic">
-                     Powered by Google Gemini AI. Conversations stay in your browser 
-                     and are used only to refine your personalized career roadmap.
+                     Powered by Talent-BridgeX Intelligence. Your conversations are 
+                     processed securely to refine your personalized career roadmap.
                   </p>
                </div>
             </div>
