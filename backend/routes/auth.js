@@ -23,7 +23,7 @@ router.post('/register', async (req, res) => {
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: { name, university, country, careerInterest }
     });
 
@@ -119,6 +119,22 @@ router.post('/logout', async (req, res) => {
     res.json({ message: 'Logged out successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+    });
+    if (error) throw error;
+    res.json({ message: 'Password reset link sent to your email.' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
