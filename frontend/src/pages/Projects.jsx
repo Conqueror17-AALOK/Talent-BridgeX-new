@@ -2,17 +2,36 @@ import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Filter, Search, Users, Globe, MapPin, ArrowUpRight, Loader2 } from 'lucide-react';
-import { projectTypes, projects } from '../data/projects';
+import { projectTypes, projects as staticProjects } from '../data/projects';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/apiClient';
+import { useEffect } from 'react';
 
 const Projects = () => {
   const [activeTab, setActiveTab] = useState(projectTypes[0]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [joiningProject, setJoiningProject] = useState(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.get('/projects');
+        setProjects(response.data);
+      } catch (err) {
+        console.warn('Projects API unavailable, using fallback:', err.message);
+        setProjects(staticProjects);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleNewProject = () => {
     if (!user) { toast.error('Please log in to create a project.'); return; }
@@ -143,7 +162,7 @@ const Projects = () => {
                        </div>
                        <div className="flex items-center gap-3 text-secondary">
                           <Users size={14} />
-                          <span className="text-[10px] uppercase tracking-widest font-bold">{project.currentMembers} / {project.teamSize} Members</span>
+                          <span className="text-[10px] uppercase tracking-widest font-bold">{project.current_members || project.currentMembers || 1} / {project.team_size || project.teamSize || 4} Members</span>
                        </div>
                        <div className="flex items-center gap-3 text-secondary">
                           <Plus size={14} />
@@ -152,7 +171,7 @@ const Projects = () => {
                     </div>
 
                     <div className="md:col-span-3 md:border-l md:border-border md:pl-8 flex flex-wrap content-center gap-2">
-                       {project.skills.map((skill, si) => (
+                       {(project.skills || []).map((skill, si) => (
                          <span key={si} className="text-[8px] uppercase tracking-widest font-bold border border-border px-3 py-1 bg-background">
                             {skill}
                          </span>
