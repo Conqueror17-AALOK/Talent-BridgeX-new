@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 
@@ -10,12 +11,16 @@ const app = express();
 const httpServer = createServer(app);
 
 // CORS — allow the frontend origin
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean)
+  .concat([
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+  ]);
 
 const io = new Server(httpServer, {
   cors: {
@@ -41,6 +46,17 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.NODE_ENV || 'development' });
 });
 
+// Rate Limiting for AI endpoints
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+
+app.use('/api/ai', aiLimiter);
+app.use('/api/assessment', aiLimiter);
+app.use('/api/roadmap', aiLimiter);
+
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -49,6 +65,10 @@ app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/opportunities', require('./routes/jobs')); // Alias so /opportunities/:id/apply works
 app.use('/api/assessment', require('./routes/assessment'));
 app.use('/api/roadmap', require('./routes/roadmap'));
+app.use('/api/projects', require('./routes/projects'));
+app.use('/api/community', require('./routes/community'));
+app.use('/api/learning', require('./routes/learning'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // 404 handler
 app.use((req, res) => {
