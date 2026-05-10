@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import { motion } from 'framer-motion';
-import { Edit2, ExternalLink, Globe, MapPin, BookOpen, Camera, Save, X, Loader2 } from 'lucide-react';
+import { Edit2, ExternalLink, Globe, MapPin, BookOpen, Camera, Save, X, Loader2, FileText, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/apiClient';
@@ -15,7 +15,9 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
   const fileInputRef = useRef(null);
+  const resumeInputRef = useRef(null);
 
   const [profile, setProfile] = useState({
     name: '',
@@ -26,7 +28,11 @@ const Profile = () => {
     portfolio_url: '',
     career_interest: '',
     avatar_url: null,
+    resume_url: null,
   });
+
+  const [skills, setSkills] = useState([]);
+  const [newSkill, setNewSkill] = useState('');
 
   // Seed form from auth context
   useEffect(() => {
@@ -40,9 +46,21 @@ const Profile = () => {
         portfolio_url: user.portfolio_url || '',
         career_interest: user.careerInterest || '',
         avatar_url: user.avatar_url || null,
+        resume_url: user.resume_url || null,
       });
+      fetchSkills();
     }
   }, [user]);
+
+  const fetchSkills = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await apiClient.get(`/users/${user.id}/skills`);
+      setSkills(res.data.strengths || []);
+    } catch (err) {
+      console.warn('Failed to fetch skills:', err.message);
+    }
+  };
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -79,6 +97,7 @@ const Profile = () => {
     if (!user?.id) return;
     setIsSaving(true);
     try {
+      // 1. Save profile basic info
       const res = await apiClient.patch(`/users/${user.id}`, {
         name: profile.name,
         bio: profile.bio,
@@ -88,13 +107,13 @@ const Profile = () => {
         portfolio_url: profile.portfolio_url,
         career_interest: profile.career_interest,
       });
+
+      // 2. Save skills to skill_profiles
+      await apiClient.patch(`/users/${user.id}/skills`, { strengths: skills });
+
       updateUser({
-        name: res.data.name,
-        bio: res.data.bio,
-        university: res.data.university,
-        careerInterest: res.data.career_interest,
-        linkedin_url: res.data.linkedin_url,
-        portfolio_url: res.data.portfolio_url,
+        ...res.data,
+        careerInterest: res.data.career_interest
       });
       setIsEditing(false);
       toast.success('Profile saved!');
@@ -103,6 +122,38 @@ const Profile = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingResume(true);
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+      const res = await apiClient.post(`/users/${user.id}/resume`, formData);
+      setProfile(prev => ({ ...prev, resume_url: res.data.resume_url }));
+      updateUser({ resume_url: res.data.resume_url });
+      toast.success('Resume uploaded successfully!');
+    } catch (err) {
+      toast.error('Resume upload failed.');
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
+  const addSkill = (e) => {
+    if (e.key === 'Enter' && newSkill.trim()) {
+      if (!skills.includes(newSkill.trim())) {
+        setSkills([...skills, newSkill.trim()]);
+      }
+      setNewSkill('');
+      e.preventDefault();
+    }
+  };
+
+  const removeSkill = (skillToRemove) => {
+    setSkills(skills.filter(s => s !== skillToRemove));
   };
 
   const staticData = {
@@ -258,13 +309,35 @@ const Profile = () => {
 
               <section className="space-y-6 md:space-y-8">
                 <h2 className="text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Technical Core</h2>
-                <div className="flex flex-wrap gap-2 md:gap-3">
-                  {staticData.skills.map(skill => (
-                    <span key={skill} className="text-[10px] uppercase tracking-[0.2em] font-bold border border-border px-4 md:px-6 py-2 md:py-3 hover:border-accent hover:text-accent cursor-default transition-all">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <input
+                      value={newSkill}
+                      onChange={e => setNewSkill(e.target.value)}
+                      onKeyDown={addSkill}
+                      placeholder="Add a skill and press Enter…"
+                      className="w-full bg-transparent border border-border p-3 text-xs outline-none focus:border-accent"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {skills.map(skill => (
+                        <span key={skill} className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold bg-background border border-border pl-3 pr-2 py-1">
+                          {skill}
+                          <X size={12} className="cursor-pointer hover:text-red-500" onClick={() => removeSkill(skill)} />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 md:gap-3">
+                    {skills.length > 0 ? skills.map(skill => (
+                      <span key={skill} className="text-[10px] uppercase tracking-[0.2em] font-bold border border-border px-4 md:px-6 py-2 md:py-3 hover:border-accent hover:text-accent cursor-default transition-all">
+                        {skill}
+                      </span>
+                    )) : (
+                      <p className="text-xs text-secondary italic">No skills added yet.</p>
+                    )}
+                  </div>
+                )}
               </section>
             </div>
 
@@ -284,6 +357,41 @@ const Profile = () => {
                   </div>
                 </section>
               )}
+
+              <section className="space-y-6 md:space-y-8">
+                <h2 className="text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Professional Credentials</h2>
+                <div className="p-6 border border-border bg-white space-y-4">
+                   <div className="flex items-center gap-3 text-secondary">
+                      <FileText size={18} />
+                      <span className="text-[10px] uppercase tracking-widest font-bold">Resumé / CV</span>
+                   </div>
+                   {profile.resume_url ? (
+                     <div className="flex justify-between items-center">
+                        <a href={profile.resume_url} target="_blank" rel="noreferrer" className="text-sm font-serif italic text-accent hover:underline flex items-center gap-2">
+                           View Current Resume <ExternalLink size={12} />
+                        </a>
+                        {isEditing && (
+                          <button onClick={() => resumeInputRef.current?.click()} className="text-[10px] uppercase font-bold text-secondary hover:text-primary transition-colors">Replace</button>
+                        )}
+                     </div>
+                   ) : (
+                     <p className="text-xs text-secondary italic">No resume uploaded yet.</p>
+                   )}
+                   {isEditing && (
+                     <>
+                        <button 
+                          onClick={() => resumeInputRef.current?.click()}
+                          disabled={isUploadingResume}
+                          className="w-full btn-outline py-3 text-[10px] flex items-center justify-center gap-2"
+                        >
+                           {isUploadingResume ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                           {isUploadingResume ? 'Uploading…' : 'Upload Resume (PDF)'}
+                        </button>
+                        <input ref={resumeInputRef} type="file" accept=".pdf" className="hidden" onChange={handleResumeUpload} />
+                     </>
+                   )}
+                </div>
+              </section>
 
               <section className="space-y-6 md:space-y-8">
                 <h2 className="text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Verified Experience</h2>
