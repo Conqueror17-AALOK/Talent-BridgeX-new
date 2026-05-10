@@ -5,41 +5,23 @@ import { Briefcase, MapPin, DollarSign, Clock, Zap, ArrowRight, Loader2 } from '
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { toast } from 'sonner';
-import { opportunityTabs, opportunities } from '../data/opportunities';
+import { opportunityTabs, opportunities as staticOpportunities } from '../data/opportunities';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 const Opportunities = () => {
   const [activeTab, setActiveTab] = useState(opportunityTabs[0]);
-  const [jobs, setJobs] = useState([]);
+  const [opportunities, setOpportunities] = useState([]);
   const [applying, setApplying] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await apiClient.get('/jobs');
-        const mappedJobs = response.data.map(job => ({
-          id: job.id,
-          title: job.title,
-          company: job.company,
-          location: job.location || 'Remote',
-          stipend: job.stipend || 'Competitive',
-          duration: job.duration || 'TBD',
-          skills: Array.isArray(job.skills_required)
-            ? job.skills_required
-            : (job.skills_required ? job.skills_required.split(',') : []),
-          postedDate: new Date(job.created_at).toLocaleDateString(),
-          matchScore: Math.floor(Math.random() * 20) + 80,
-          type: job.type || 'Internships'
-        }));
-        setJobs(mappedJobs.length > 0 ? mappedJobs : opportunities);
-      } catch (error) {
-        console.warn('Jobs API unavailable, using fallback data:', error.message);
-        setJobs(opportunities);
-      }
-    };
-    fetchJobs();
+    apiClient.get('/jobs')
+      .then(res => setOpportunities(res.data))
+      .catch(err => {
+        console.error('Failed to fetch jobs:', err);
+        setOpportunities(staticOpportunities);
+      });
   }, []);
 
   const handleQuickApply = async (opp) => {
@@ -113,7 +95,7 @@ const Opportunities = () => {
                 
                 <div className="flex justify-between items-center py-2">
                    <p className="text-[10px] uppercase tracking-widest text-secondary font-bold">
-                      {jobs.filter(o => o.type === activeTab).length} Matches Found
+                      {opportunities.filter(o => o.type === activeTab).length} Matches Found
                    </p>
                    <div className="flex gap-4">
                       <select className="bg-transparent border border-border px-3 md:px-4 py-2 text-[10px] uppercase tracking-widest outline-none">
@@ -126,7 +108,7 @@ const Opportunities = () => {
 
              <div className="space-y-6 md:space-y-8">
                 <AnimatePresence mode="wait">
-                  {jobs
+                  {opportunities
                     .filter(o => o.type === activeTab)
                     .map((opp, i) => (
                       <motion.div 
@@ -138,10 +120,10 @@ const Opportunities = () => {
                         className="bg-white border border-border p-6 md:p-10 group hover:border-accent transition-all relative overflow-hidden"
                       >
                         {/* Match Score */}
-                        <div className="absolute top-0 right-0 p-4 md:p-8 text-right">
-                           <p className="text-[10px] uppercase tracking-widest text-secondary font-bold mb-1">AI Match</p>
-                           <p className={`text-3xl md:text-4xl font-serif ${opp.matchScore > 90 ? 'text-accent' : 'text-primary'}`}>{opp.matchScore}%</p>
-                        </div>
+                         <div className="absolute top-0 right-0 p-4 md:p-8 text-right">
+                            <p className="text-[10px] uppercase tracking-widest text-secondary font-bold mb-1">AI Match</p>
+                            <p className={`text-3xl md:text-4xl font-serif ${(opp.matchScore || 85) > 90 ? 'text-accent' : 'text-primary'}`}>{opp.matchScore || 85}%</p>
+                         </div>
 
                         <div className="max-w-2xl space-y-6 md:space-y-8 pr-20 md:pr-0">
                            <div className="space-y-2">
@@ -164,13 +146,13 @@ const Opportunities = () => {
                               </div>
                            </div>
 
-                           <div className="flex flex-wrap gap-2">
-                              {opp.skills.map((skill, si) => (
-                                 <span key={si} className="text-[8px] uppercase tracking-widest font-bold border border-border px-3 py-1 bg-background">
-                                    {skill}
-                                 </span>
-                              ))}
-                           </div>
+                            <div className="flex flex-wrap gap-2">
+                               {(opp.skills || []).map((skill, si) => (
+                                  <span key={si} className="text-[8px] uppercase tracking-widest font-bold border border-border px-3 py-1 bg-background">
+                                     {skill}
+                                  </span>
+                               ))}
+                            </div>
 
                            <hr className="border-border" />
 
