@@ -2,9 +2,29 @@ import AppLayout from '../components/AppLayout';
 import { motion } from 'framer-motion';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { LineChart as LineIcon } from 'lucide-react';
-import { skillGrowth, weeklyActivity, applications, milestones } from '../data/analytics';
+import { skillGrowth, weeklyActivity, applications as staticApplications, milestones } from '../data/analytics';
+import { useState, useEffect } from 'react';
+import apiClient from '../api/apiClient';
+import { Loader2 } from 'lucide-react';
 
 const Analytics = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await apiClient.get('/analytics');
+        setStats(response.data);
+      } catch (err) {
+        console.warn('Analytics API unavailable:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const topBar = (
     <>
       <div className="flex items-center gap-3 text-secondary">
@@ -40,12 +60,12 @@ const Analytics = () => {
             </div>
             <div className="grid grid-cols-2 gap-3 md:gap-4 w-full md:w-auto">
               <div className="p-4 md:p-6 border border-border bg-white">
-                <p className="text-[10px] uppercase tracking-widest text-secondary mb-1">Global Percentile</p>
-                <p className="text-2xl md:text-3xl font-serif">Top 4%</p>
+                <p className="text-[10px] uppercase tracking-widest text-secondary mb-1">Enrolled Modules</p>
+                <p className="text-2xl md:text-3xl font-serif">{stats?.completedModulesCount || 0}</p>
               </div>
               <div className="p-4 md:p-6 border border-border bg-white">
-                <p className="text-[10px] uppercase tracking-widest text-secondary mb-1">Growth Index</p>
-                <p className="text-2xl md:text-3xl font-serif">+24.8%</p>
+                <p className="text-[10px] uppercase tracking-widest text-secondary mb-1">Applications</p>
+                <p className="text-2xl md:text-3xl font-serif">{stats?.applicationsCount || 0}</p>
               </div>
             </div>
           </div>
