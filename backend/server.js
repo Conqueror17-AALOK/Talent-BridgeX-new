@@ -49,7 +49,7 @@ app.get('/health', (req, res) => {
 // Rate Limiting for AI endpoints
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // limit each IP to 20 requests per windowMs
+  max: 1000, // Increased for development — avoid 429 errors
   message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
 });
 
