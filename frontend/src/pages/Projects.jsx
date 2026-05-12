@@ -22,7 +22,8 @@ const Projects = () => {
       setLoading(true);
       try {
         const response = await apiClient.get('/projects');
-        setProjects(response.data);
+        const data = response.data || [];
+        setProjects(data.length > 0 ? data : staticProjects);
       } catch (err) {
         console.warn('Projects API unavailable, using fallback:', err.message);
         setProjects(staticProjects);
@@ -132,7 +133,11 @@ const Projects = () => {
           <div className="space-y-px bg-border border border-border">
             <AnimatePresence mode="wait">
               {projects
-                .filter(p => p.type === activeTab)
+                .filter(p => {
+                  const pType = (p.type || '').toLowerCase();
+                  const tab = activeTab.toLowerCase();
+                  return pType.includes(tab.split(' ')[0]) || tab.includes(pType);
+                })
                 .map((project, i) => (
                   <motion.div 
                     key={project.id}
