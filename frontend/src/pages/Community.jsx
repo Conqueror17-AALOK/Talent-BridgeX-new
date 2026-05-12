@@ -22,7 +22,8 @@ const Community = () => {
       setLoading(true);
       try {
         const response = await apiClient.get('/community/groups');
-        setStudyGroups(response.data);
+        const data = response.data || [];
+        setStudyGroups(data.length > 0 ? data : staticStudyGroups);
       } catch (err) {
         console.warn('Community API unavailable, using fallback:', err.message);
         setStudyGroups(staticStudyGroups);
