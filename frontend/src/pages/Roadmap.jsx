@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { 
   ExternalLink, 
   RefreshCcw, 
@@ -13,14 +12,23 @@ import {
 import { roadmapService } from '../services/ai.service';
 import { authService } from '../services/auth.service';
 
+import { useLocation, useNavigate } from 'react-router-dom';
+
 const Roadmap = () => {
-  const [roadmap, setRoadmap] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const [roadmap, setRoadmap] = useState(location.state?.roadmap || null);
+  const [loading, setLoading] = useState(!location.state?.roadmap);
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
   useEffect(() => {
     const fetchRoadmap = async () => {
+      // If we already have roadmap from state, don't fetch again unless user refresh
+      if (roadmap) {
+        setLoading(false);
+        return;
+      }
+
       if (!user) {
         setLoading(false);
         return;
@@ -29,13 +37,21 @@ const Roadmap = () => {
         const data = await roadmapService.get(user.id);
         setRoadmap(data);
       } catch (error) {
-        console.error("Failed to fetch roadmap:", error);
+        console.error("Failed to fetch roadmap, checking local cache:", error);
+        const cached = localStorage.getItem(`roadmap_${user.id}`);
+        if (cached) {
+          try {
+            setRoadmap(JSON.parse(cached));
+          } catch (e) {
+            console.error('Local cache corruption:', e);
+          }
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchRoadmap();
-  }, [user?.id]);
+  }, [user?.id, roadmap]);
 
   if (loading) {
     return (
