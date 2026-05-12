@@ -17,7 +17,14 @@ const Opportunities = () => {
 
   useEffect(() => {
     apiClient.get('/jobs')
-      .then(res => setOpportunities(res.data))
+      .then(res => {
+        if (res.data && res.data.length > 0) {
+          setOpportunities(res.data);
+        } else {
+          // Fallback to static data if DB is empty
+          setOpportunities(staticOpportunities);
+        }
+      })
       .catch(err => {
         console.error('Failed to fetch jobs:', err);
         setOpportunities(staticOpportunities);
