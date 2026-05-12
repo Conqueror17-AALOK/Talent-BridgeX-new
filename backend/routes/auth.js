@@ -23,7 +23,7 @@ router.post('/register', async (req, res) => {
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: false,
+      email_confirm: true,
       user_metadata: { name, university, country, careerInterest }
     });
 
