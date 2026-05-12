@@ -1,6 +1,6 @@
 import AppLayout from '../components/AppLayout';
 import { motion } from 'framer-motion';
-import { Bell, Search, ArrowUpRight, Sparkles, Loader2 } from 'lucide-react';
+import { Bell, Search, ArrowUpRight, Sparkles, Loader2, RefreshCcw } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -64,7 +64,15 @@ const Dashboard = () => {
         const data = await roadmapService.get(user.id);
         setRoadmap(data);
       } catch (error) {
-        console.warn('Roadmap fetch error:', error.message);
+        console.warn('Roadmap fetch error, checking local cache:', error.message);
+        const cached = localStorage.getItem(`roadmap_${user.id}`);
+        if (cached) {
+          try {
+            setRoadmap(JSON.parse(cached));
+          } catch (e) {
+            console.error('Local cache corruption:', e);
+          }
+        }
       } finally {
         setRoadmapLoading(false);
       }
@@ -200,12 +208,23 @@ const Dashboard = () => {
                     Our AI has detected an incomplete profile. Execute the skill assessment to map your path to industry standards.
                   </p>
                 </div>
-                <div className="flex justify-center">
+                <div className="flex justify-center gap-4">
                   <button 
                     onClick={() => navigate('/assessment')}
                     className="btn-primary px-12 py-5 text-xs font-bold uppercase tracking-[0.2em]"
                   >
                     Start Intelligence Assessment
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setRoadmapLoading(true);
+                      // This will trigger the fetchRoadmap useEffect because we can just call it manually
+                      // Or we can just reload the component logic
+                      window.location.reload(); 
+                    }}
+                    className="btn-outline px-8 py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center gap-2"
+                  >
+                    <RefreshCcw size={14} /> Retry Sync
                   </button>
                 </div>
               </div>
