@@ -19,13 +19,11 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import RegistrationPending from './pages/RegistrationPending';
-import CustomCursor from './components/CustomCursor';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <>
-      <CustomCursor />
       <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
