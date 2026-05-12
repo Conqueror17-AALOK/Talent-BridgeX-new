@@ -33,6 +33,18 @@ export const modules = [
     ]
   },
   {
+    id: "cloud-native-201",
+    title: "Cloud Native & Kubernetes",
+    category: "Technical Deep-dives",
+    description: "Master the art of container orchestration and cloud-native patterns for modern application deployment.",
+    duration: "5 Hours",
+    level: "Advanced",
+    prerequisites: ["Docker Basics", "Linux CLI"],
+    videoUrl: "https://www.youtube.com/embed/example",
+    content: "Deep dive into K8s...",
+    quiz: []
+  },
+  {
     id: "comm-exec-202",
     title: "Executive Communication for Engineers",
     category: "Soft Skill Mastery",
@@ -45,6 +57,18 @@ export const modules = [
     quiz: []
   },
   {
+    id: "leadership-101",
+    title: "Engineering Leadership Fundamentals",
+    category: "Soft Skill Mastery",
+    description: "Transitioning from individual contributor to lead: managing teams, projects, and expectations.",
+    duration: "3 Hours",
+    level: "Intermediate",
+    prerequisites: ["None"],
+    videoUrl: "https://www.youtube.com/embed/example",
+    content: "Leadership principles...",
+    quiz: []
+  },
+  {
     id: "fin-tech-303",
     title: "FinTech & Global Markets",
     category: "Domain Knowledge",
@@ -54,6 +78,18 @@ export const modules = [
     prerequisites: ["Basic Economics"],
     videoUrl: "https://www.youtube.com/embed/example",
     content: "Content about FinTech...",
+    quiz: []
+  },
+  {
+    id: "e-commerce-logistics",
+    title: "E-commerce & Global Logistics",
+    category: "Domain Knowledge",
+    description: "Exploring the technical infrastructure behind global supply chains and high-scale retail platforms.",
+    duration: "4 Hours",
+    level: "Intermediate",
+    prerequisites: ["None"],
+    videoUrl: "https://www.youtube.com/embed/example",
+    content: "Logistics and e-commerce...",
     quiz: []
   }
 ];
