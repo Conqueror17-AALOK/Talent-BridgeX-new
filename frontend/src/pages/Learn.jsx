@@ -16,7 +16,8 @@ const Learn = () => {
     const fetchModules = async () => {
       try {
         const response = await apiClient.get('/learning/modules');
-        setModules(response.data);
+        const data = response.data || [];
+        setModules(data.length > 0 ? data : staticModules);
       } catch (err) {
         console.warn('Learning API unavailable, using fallback:', err.message);
         setModules(staticModules);
