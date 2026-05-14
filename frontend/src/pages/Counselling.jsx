@@ -33,7 +33,17 @@ const Counselling = () => {
     { 
       role: 'assistant', 
       content: "Welcome. I have analyzed your latest skill assessment and current roadmap progress. How can I assist with your career trajectory today?",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: '10:00 AM'
+    },
+    {
+      role: 'user',
+      content: "I'm interested in becoming a Full Stack Developer.",
+      timestamp: '10:01 AM'
+    },
+    {
+      role: 'assistant',
+      content: "That's an excellent choice! Full Stack development is highly rewarding. Let's look at your current skill gaps in that area.",
+      timestamp: '10:01 AM'
     }
   ]);
   const [input, setInput] = useState('');
