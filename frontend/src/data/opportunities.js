@@ -456,62 +456,6 @@ export const opportunities = [
     postedDate: "2 weeks ago"
   },
   {
-    id: "opp-gs-1",
-    title: "Quantitative Research Intern",
-    company: "Goldman Sachs",
-    type: "Internships",
-    location: "New York / Hybrid",
-    domain: "FinTech",
-    stipend: "$9,000/mo",
-    duration: "10 Weeks",
-    matchScore: 92,
-    skills: ["Python", "Stochastic Calculus", "SQL"],
-    description: "Develop mathematical models for pricing and risk management of complex financial products.",
-    postedDate: "1 day ago"
-  },
-  {
-    id: "opp-openai-1",
-    title: "AI Safety Intern",
-    company: "OpenAI",
-    type: "Internships",
-    location: "San Francisco / Hybrid",
-    domain: "AI",
-    stipend: "$10,000/mo",
-    duration: "12 Weeks",
-    matchScore: 95,
-    skills: ["Python", "PyTorch", "Reinforcement Learning"],
-    description: "Work on the frontier of AI alignment and safety to ensure artificial general intelligence benefits all of humanity.",
-    postedDate: "2 days ago"
-  },
-  {
-    id: "opp-medtronic-1",
-    title: "Biomedical Software Intern",
-    company: "Medtronic",
-    type: "Internships",
-    location: "Minneapolis / On-site",
-    domain: "HealthTech",
-    stipend: "$5,500/mo",
-    duration: "3 Months",
-    matchScore: 88,
-    skills: ["C++", "Embedded Systems", "Regulatory Standards"],
-    description: "Contributing to the software development lifecycle of life-saving medical devices.",
-    postedDate: "4 days ago"
-  },
-  {
-    id: "opp-amazon-1",
-    title: "Applied Scientist Intern",
-    company: "Amazon",
-    type: "Internships",
-    location: "Seattle / Hybrid",
-    domain: "E-commerce",
-    stipend: "$8,500/mo",
-    duration: "12 Weeks",
-    matchScore: 90,
-    skills: ["Machine Learning", "Python", "Large Scale Systems"],
-    description: "Researching and developing innovative machine learning solutions to enhance the customer experience.",
-    postedDate: "3 days ago"
-  },
-  {
     id: "opp-slack-1",
     title: "Frontend Engineering Intern",
     company: "Slack",
@@ -524,20 +468,6 @@ export const opportunities = [
     skills: ["React", "TypeScript", "Accessibility"],
     description: "Building polished and accessible UI features for millions of users worldwide.",
     postedDate: "2 days ago"
-  },
-  {
-    id: "opp-shopify-1",
-    title: "Custom Shopify Theme Development",
-    company: "E-com Growth Agency",
-    type: "Freelance Gigs",
-    location: "Remote",
-    domain: "E-commerce",
-    stipend: "$110/hr",
-    duration: "4 Weeks",
-    matchScore: 85,
-    skills: ["Liquid", "JavaScript", "HTML/CSS"],
-    description: "Crafting a high-conversion custom theme for a high-growth D2C brand.",
-    postedDate: "1 day ago"
   },
   {
     id: "opp-salesforce-1",
@@ -596,34 +526,6 @@ export const opportunities = [
     postedDate: "4 days ago"
   },
   {
-    id: "opp-paypal-1",
-    title: "Senior Backend Engineer – Payment Safety",
-    company: "PayPal",
-    type: "Employer Connections",
-    location: "San Jose / Hybrid",
-    domain: "FinTech",
-    stipend: "$145–180K",
-    duration: "Full-Time",
-    matchScore: 88,
-    skills: ["Java", "Spring Boot", "Fraud Detection"],
-    description: "Protecting hundreds of millions of customers by building real-time fraud prevention systems.",
-    postedDate: "1 week ago"
-  },
-  {
-    id: "opp-stanford-1",
-    title: "Research Collaboration: LLM Interpretability",
-    company: "Stanford HAI",
-    type: "University Collaborations",
-    location: "Palo Alto / Hybrid",
-    domain: "AI",
-    stipend: "Fellowship",
-    duration: "9 Months",
-    matchScore: 93,
-    skills: ["Python", "PyTorch", "Interpretability Tools"],
-    description: "Academic partnership focused on understanding the internal representations of large language models.",
-    postedDate: "5 days ago"
-  },
-  {
     id: "opp-cmu-1",
     title: "Collaborative Robotics Research",
     company: "Carnegie Mellon University",
@@ -637,18 +539,4 @@ export const opportunities = [
     description: "Working on multi-robot coordination for search and rescue operations.",
     postedDate: "1 week ago"
   },
-  {
-    id: "opp-stripe-2",
-    title: "Crypto Payment Integration Project",
-    company: "Stripe Connect Team",
-    type: "Freelance Gigs",
-    location: "Remote",
-    domain: "FinTech",
-    stipend: "$160/hr",
-    duration: "2 Months",
-    matchScore: 89,
-    skills: ["Go", "Web3", "API Engineering"],
-    description: "Consulting on the integration of stablecoin settlement options for Stripe Connect users.",
-    postedDate: "3 days ago"
-  }
 ];
