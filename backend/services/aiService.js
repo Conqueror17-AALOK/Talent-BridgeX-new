@@ -21,8 +21,15 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemi
 const callGemini = async (prompt, systemInstruction = "", responseMimeType = "text/plain") => {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing.");
   
+  let contents;
+  if (Array.isArray(prompt)) {
+    contents = prompt;
+  } else {
+    contents = [{ role: 'user', parts: [{ text: prompt }] }];
+  }
+
   const body = {
-    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    contents: contents
   };
 
   if (systemInstruction) {
@@ -189,34 +196,24 @@ const evaluateAssessment = async (answers, interest) => {
 };
 
 const generateCounsellingResponse = async (message, context, history = []) => {
-  try {
-    if (!openai) throw new Error("OpenAI not configured");
-    const systemPrompt = `You are the Talent-BridgeX AI Career Counsellor. Student Context: ${JSON.stringify(context)}`;
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...history.map(msg => ({ role: msg.role, content: msg.content })),
-      { role: "user", content: message }
-    ];
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: messages,
-    });
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.warn("OpenAI Counselling failed, trying Gemini...", error.message);
-    return await generateGeminiResponse(message, context, history);
-  }
+  const dummyResponses = [
+    "That's a great question! Based on your profile, I'd suggest looking into specialized certifications in that area.",
+    "Interesting point. Many students in your position find that building a strong portfolio is the best next step.",
+    "I understand. Career paths aren't always linear. Have you considered exploring hybrid roles that combine your interests?",
+    "That sounds like a solid plan. I recommend reaching out to professionals on LinkedIn who are already in that role.",
+    "To help you better, could you tell me more about which specific technologies you're most comfortable with?",
+    "That's a common challenge. Focus on mastering the fundamentals first, and the rest will follow.",
+    "The industry is evolving rapidly. Staying curious and continuous learning is key to success in this field.",
+    "Have you checked the latest industry reports? There's a high demand for experts in that niche right now.",
+    "Networking is just as important as technical skills. Try attending some local meetups or virtual webinars.",
+    "Your current roadmap looks good, but adding a bit of cloud experience could really give you an edge.",
+    "Don't worry about knowing everything at once. Pick one core area and go deep into it for the next few months."
+  ];
+  return dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
 };
 
 const generateGeminiResponse = async (message, context, history = []) => {
-  const systemPrompt = `You are the Talent-BridgeX AI Career Counsellor. Context: ${JSON.stringify(context)}`;
-  const contents = history.map(msg => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }]
-  }));
-  contents.push({ role: 'user', parts: [{ text: message }] });
-
-  return await callGemini(message, systemPrompt);
+  return await generateCounsellingResponse(message, context, history);
 };
 
 module.exports = {
